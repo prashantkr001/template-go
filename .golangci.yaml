@@ -25,7 +25,6 @@ formatters:
       local-prefixes:
         - github.com/prashantkr001/template-go
 
-
     golines:
       # Target maximum line length.
       # Default: 100
@@ -343,8 +342,7 @@ linters:
     wrapcheck:
       report-internal-errors: false
       ignore-package-globs:
-        - github.com/prashantkr001/template-go
-/*
+        - github.com/prashantkr001/template-go/*
   exclusions:
     # Log a warning if an exclusion rule is unused.
     # Default: false
