@@ -1,0 +1,18 @@
+apiVersion: core.oam.dev/v1beta1
+kind: Application
+metadata:
+  name: "go-template-playground-starter"
+spec:
+  components:
+    - type: "service-v1alpha5"
+      name: "api"
+      properties:
+        image:
+          repository: "prashantkr001/template-go"
+          tag: "v0.1.0"
+        scaling:
+          size:
+            memory: 512
+            cpu: 100
+        expose:
+          scope: "INTERNAL"

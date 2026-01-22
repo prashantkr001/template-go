@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package items.v1;
+
+// the version is a prefix instead of suffix by design, so the generated code for Go
+// does create package name "v1".
+option go_package = "v1/pbitems";
+
+option java_multiple_files = true;
+option java_outer_classname = "TemplateGo";
+
+message CreateItemRequest {
+  int64 id = 1;
+  string name = 2;
+}
+
+message Item {
+    int64 id = 1;
+    string name = 2;
+}
+
+message ItemListRequest {
+  int32 limit = 1;
+}
+
+message ItemListResponse{
+  repeated Item items = 1;
+}
+
+service ItemsService {
+  rpc CreateItem(CreateItemRequest) returns (Item) {};
+  rpc ListItems(ItemListRequest) returns (ItemListResponse) {};
+}

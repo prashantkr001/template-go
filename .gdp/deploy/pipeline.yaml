@@ -1,0 +1,10 @@
+apiVersion: core.oam.dev/v1beta1
+kind: DeploymentPipeline
+spec:
+  steps:
+    - type: deployment
+      name: playground-aws
+      path: .gdp/deploy/playground/aws
+      destination:
+        environment: playground
+        stamp: aws

@@ -1,0 +1,97 @@
+services:
+  kafka:
+    image: bitnami/kafka:4.0
+    hostname: kafka
+    ports:
+      - "9092:9092"
+      - "2181:2181"
+    environment:
+      BITNAMI_DEBUG: true
+      ALLOW_PLAINTEXT_LISTENER: yes
+      KAFKA_BROKER_ID: 1
+      KAFKA_CFG_ADVERTISED_LISTENERS: DOCKER://kafka:29092,PLAINTEXT://${DOCKER_HOSTNAME}:9092,LOCAL://127.0.0.1:19092
+      KAFKA_CFG_AUTO_CREATE_TOPICS_DEFAULT_PARTITIONS: 1
+      KAFKA_CFG_AUTO_CREATE_TOPICS_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE_DEFAULT: true
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@127.0.0.1:2181
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,DOCKER:PLAINTEXT,LOCAL:PLAINTEXT
+      KAFKA_CFG_LISTENERS: DOCKER://:29092,PLAINTEXT://:9092,CONTROLLER://:2181,LOCAL://:19092
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_ENABLE_KRAFT: yes
+    networks:
+      - template-go
+
+  mongodb:
+    image: mongo:8
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root1
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+      MONGO_INITDB_DATABASE: template-go-db
+    networks:
+      - template-go
+
+  # name 'application' should suffice because docker prefixes the parent directory name along with container name
+  application:
+    image: "template-go:latest"
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      args:
+        - GITHUB_TOKEN=${GITHUB_TOKEN}
+    restart: on-failure
+    volumes:
+      - type: bind
+        source: "../../"
+        target: /app
+      - type: bind
+        source: "./.air.toml"
+        target: /etc/.air.toml
+    environment:
+      ENVIRONMENT: "development"
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      APP_HTTP_PORT: 5001
+      APP_GRPC_PORT: 5002
+      MONGODB_HOSTS: mongodb
+      MONGODB_PORT: 27017
+      MONGODB_DATABASE: template-go-db
+      MONGODB_USERNAME: root1
+      MONGODB_PASSWORD: rootpassword
+      MONGODB_AUTH_DATABASE: admin
+      # MONGODB_AUTH_MECHANISM: SCRAM-SHA-1
+      MONGODB_READTIMEOUT: 3s
+      MONGODB_WRITETIMEOUT: 15s
+      MONGODB_IDLE_TIMEOUT: 60s
+      MONGODB_PING_TIMEOUT: 3s
+      KAFKA_SEEDS: "kafka:9092"
+      KAFKA_TOPICS: "template-item-create"
+    ports:
+      - "5001:5001"
+      - "5002:5002"
+      - "2223:2223"
+      - "2000:2000"
+    networks:
+      - template-go
+    depends_on:
+      - kafka
+      - mongodb
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:1
+    restart: always
+    networks:
+      - template-go
+    profiles: ["monitoring"]
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:v2
+    restart: always
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    networks:
+      - template-go
+    profiles: ["monitoring"]
+networks:
+  template-go:
